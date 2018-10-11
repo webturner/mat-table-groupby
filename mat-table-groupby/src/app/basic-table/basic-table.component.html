@@ -36,9 +36,10 @@
   <!-- Group header -->
   <ng-container matColumnDef="groupHeader">
     <td colspan="999" mat-cell *matCellDef="let group">
-      <mat-icon *ngIf="group.expanded">expand_less</mat-icon>
-      <mat-icon *ngIf="!group.expanded">expand_more</mat-icon>
-      <strong>{{grouping.groupByColumns[group.level-1]}} = {{group[grouping.groupByColumns[group.level-1]]}}</strong> 
+      <mat-icon [style.paddingLeft.ex]="((group.level-1) * 1)" style="padding-right: 1ex;">
+        {{group.expanded ? 'expand_less' : 'expand_more'}}
+      </mat-icon>
+      <strong>{{grouping.groupByColumns[group.level-1]}} = {{group[grouping.groupByColumns[group.level-1]]}}</strong>
     </td>
   </ng-container>
 
