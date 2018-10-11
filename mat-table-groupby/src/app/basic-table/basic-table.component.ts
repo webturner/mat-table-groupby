@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatTableDataSource } from '@angular/material';
 
 import { People, SampleDataService } from "../sample-data.service";
+import { MatTableGroupingModule } from "../mat-table-grouping/mat-table-grouping.module"
 
 @Component({
   selector: 'app-basic-table',
@@ -11,12 +12,13 @@ import { People, SampleDataService } from "../sample-data.service";
 export class BasicTableComponent implements OnInit {
 
   displayedColumns: string[] = ['surname', 'forename', 'gender', 'ukCity', 'salary', 'department'];
-  public dataSource = new MatTableDataSource<People>([]);
+
+  grouping = new MatTableGroupingModule<People>();
 
   constructor(private sampleDataService: SampleDataService) { }
 
   ngOnInit() {
-    this.dataSource.data = this.sampleDataService.people;
+    this.grouping.init(['department', 'salary'], this.sampleDataService.people);
   }
 
 }
