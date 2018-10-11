@@ -1,4 +1,4 @@
-<table mat-table [dataSource]="grouping.dataSource" class="mat-elevation-z8">
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
 
   <ng-container matColumnDef="surname">
     <th mat-header-cell *matHeaderCellDef> Surname </th>
@@ -39,10 +39,10 @@
       <mat-icon [style.paddingLeft.ex]="((group.level-1) * 1)" style="padding-right: 1ex;">
         {{group.expanded ? 'expand_less' : 'expand_more'}}
       </mat-icon>
-      <strong>{{grouping.groupByColumns[group.level-1]}} = {{group[grouping.groupByColumns[group.level-1]]}}</strong>
+      <strong>{{matGroupBy.grouping.groupedColumns[group.level-1]}} = {{group[matGroupBy.grouping.groupedColumns[group.level-1]]}}</strong>
     </td>
   </ng-container>
 
-  <tr mat-row *matRowDef="let row; columns: ['groupHeader']; when: grouping.isGroup" (click)="grouping.groupHeaderClick(row)"> </tr>
+  <tr mat-row *matRowDef="let row; columns: ['groupHeader']; when: matGroupBy.isGroup" (click)="grouping.groupHeaderClick(row)"> </tr>
 
 </table>

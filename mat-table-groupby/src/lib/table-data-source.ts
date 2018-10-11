@@ -19,6 +19,7 @@ import {
 import {MatPaginator, PageEvent} from '@angular/material/paginator';
 import {MatSort, Sort} from '@angular/material/sort';
 import {map} from 'rxjs/operators';
+import { MatGroupBy, Grouping, Group } from './groupBy';
 
 /**
  * Corresponds to `Number.MAX_SAFE_INTEGER`. Moved out into a variable here due to
@@ -34,12 +35,12 @@ const MAX_SAFE_INTEGER = 9007199254740991;
  * properties are accessed. Also allows for filter customization by overriding filterTermAccessor,
  * which defines how row data is converted to a string for filter matching.
  */
-export class MatTableDataSource<T> extends DataSource<T> {
+export class MatTableDataSource<T> extends DataSource<(T | Group)> {
   /** Stream that emits when a new data array is set on the data source. */
   private readonly _data: BehaviorSubject<T[]>;
 
   /** Stream emitting render data to the table (depends on ordered data changes). */
-  private readonly _renderData = new BehaviorSubject<T[]>([]);
+  private readonly _renderData = new BehaviorSubject<(T | Group)[]>([]);
 
   /** Stream that emits when a new filter string is set on the data source. */
   private readonly _filter = new BehaviorSubject<string>('');
@@ -96,6 +97,17 @@ export class MatTableDataSource<T> extends DataSource<T> {
     this._updateChangeSubscription();
   }
   private _paginator: MatPaginator|null;
+
+  /**
+   * Instance of the MatGroupBy component used to add group headers to the data. Grouping changes
+   * emitted by the MatGroupBy will trigger an update to the table's rendered data.
+   */
+  get groupBy(): MatGroupBy|null { return this._groupBy; }
+  set groupBy(groupBy: MatGroupBy|null) {
+    this._groupBy = groupBy;
+    this._updateChangeSubscription();
+  }
+  private _groupBy: MatGroupBy|null;
 
   /**
    * Data accessor function that is used for accessing data properties for sorting through
@@ -207,6 +219,9 @@ export class MatTableDataSource<T> extends DataSource<T> {
     const pageChange: Observable<PageEvent|null|void> = this._paginator ?
         merge<PageEvent|void>(this._paginator.page, this._paginator.initialized) :
         observableOf(null);
+    const groupChange: Observable<Grouping|null|void> = this._groupBy ?
+      this._groupBy.groupingChange :
+      observableOf(null);
 
     const dataStream = this._data;
     // Watch for base data or filter changes to provide a filtered set of data.
@@ -218,9 +233,12 @@ export class MatTableDataSource<T> extends DataSource<T> {
     // Watch for ordered data or page changes to provide a paged set of data.
     const paginatedData = combineLatest(orderedData, pageChange)
       .pipe(map(([data]) => this._pageData(data)));
+    // Watch for paged data or group changes to provide a grouped set of data.
+    const groupedData = combineLatest(paginatedData, groupChange)
+      .pipe(map(([data]) => this._groupData(data)));
     // Watched for paged data changes and send the result to the table to render.
     this._renderChangesSubscription.unsubscribe();
-    this._renderChangesSubscription = paginatedData.subscribe(data => this._renderData.next(data));
+    this._renderChangesSubscription = groupedData.subscribe(data => this._renderData.next(data));
   }
 
   /**
@@ -261,6 +279,16 @@ export class MatTableDataSource<T> extends DataSource<T> {
 
     const startIndex = this.paginator.pageIndex * this.paginator.pageSize;
     return data.slice().splice(startIndex, this.paginator.pageSize);
+  }
+
+  /**
+   * Returns the provided data array with group rows according to the group by columns. If there
+   * is no groupBy provided, returns the data array as provided.
+   */
+  _groupData(data: T[]): (T | Group)[] {
+    if (!this.groupBy) { return data; }
+
+    return this.groupBy.groupData(data.slice());
   }
 
   /**
