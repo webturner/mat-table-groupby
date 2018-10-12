@@ -1,4 +1,4 @@
-import { NgModule, IterableDiffers, IterableDiffer, DoCheck, Injectable } from '@angular/core';
+import { NgModule, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable, BehaviorSubject } from 'rxjs';
 
@@ -11,21 +11,12 @@ import { Observable, BehaviorSubject } from 'rxjs';
   ],
   declarations: []
 })
-export class MatGroupBy implements DoCheck {
+export class MatGroupBy {
 
-  groupingDiffer: IterableDiffer<string>;
   groupingChange: BehaviorSubject<Grouping>;
 
-  constructor(private _iterableDiffers: IterableDiffers) {
+  constructor() {
     this.groupingChange = new BehaviorSubject<Grouping>(this.grouping);
-    this.groupingDiffer = this._iterableDiffers.find([]).create(null);
-  }
-
-  ngDoCheck() {
-    let changes = this.groupingDiffer.diff(this.grouping.groupedColumns);
-    if (changes) {
-      this.groupingChange.next(this.grouping);
-    }
   }
 
   get grouping(): Grouping { return this._grouping; }
