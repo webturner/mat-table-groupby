@@ -53,6 +53,8 @@ export class MatGroupBy implements DoCheck {
     if (level >= this.grouping.groupedColumns.length)
       return data;
 
+    const currentColumn = this.grouping.groupedColumns[level];
+
     var groups = this.uniqueBy(
       data.map(
         row => {
@@ -61,6 +63,8 @@ export class MatGroupBy implements DoCheck {
             result = new Group();
             result.level = level + 1;
             result.parent = parent;
+            result.name = currentColumn;
+            result.value = row[currentColumn];
             for (var i = 0; i <= level; i++)
               result[this.grouping.groupedColumns[i]] = row[this.grouping.groupedColumns[i]];
             this.groupCache.push(result);
@@ -70,16 +74,14 @@ export class MatGroupBy implements DoCheck {
       ),
       JSON.stringify);
 
-    const currentColumn = this.grouping.groupedColumns[level];
-
     var subGroups = [];
     groups.forEach(group => {
       let rowsInGroup = data.filter(row => group[currentColumn] === row[currentColumn]);
       subGroups = subGroups.concat([group]);
-      if (group.expanded) {
-        let subGroup = this.getSublevel<T>(rowsInGroup, level + 1, group);
-        subGroups = subGroups.concat(subGroup);
-      } 
+      if (group.expanded)
+        subGroups = subGroups.concat(
+          this.getSublevel<T>(rowsInGroup, level + 1, group)
+        );
     });
     return subGroups;
   }
@@ -129,9 +131,8 @@ export interface Grouping {
 
 export class Group {
   level: number = 0;
+  name: string;
+  value: any;
   parent: Group;
   expanded: boolean = true;
-  get visible(): boolean {
-    return !this.parent || (this.parent.visible && this.parent.expanded);
-  }
 }

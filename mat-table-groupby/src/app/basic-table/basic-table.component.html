@@ -39,7 +39,7 @@
       <mat-icon [style.paddingLeft.ex]="((group.level-1) * 1)" style="padding-right: 1ex;">
         {{group.expanded ? 'expand_less' : 'expand_more'}}
       </mat-icon>
-      <strong>{{matGroupBy.grouping.groupedColumns[group.level-1]}} = {{group[matGroupBy.grouping.groupedColumns[group.level-1]]}}</strong>
+      <strong>{{group.name}} = {{group.value}}</strong>
     </td>
   </ng-container>
 
