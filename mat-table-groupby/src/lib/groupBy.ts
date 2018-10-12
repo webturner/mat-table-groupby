@@ -13,7 +13,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 })
 export class MatGroupBy {
 
-  private groupingChange: BehaviorSubject<Grouping>;
+  public groupingChange: BehaviorSubject<Grouping>;
 
   constructor() {
     this.groupingChange = new BehaviorSubject<Grouping>(this.grouping);
