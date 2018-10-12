@@ -75,9 +75,11 @@ export class MatGroupBy implements DoCheck {
     var subGroups = [];
     groups.forEach(group => {
       let rowsInGroup = data.filter(row => group[currentColumn] === row[currentColumn]);
-      let subGroup = this.getSublevel<T>(rowsInGroup, level + 1, group);
-      subGroup.unshift(group);
-      subGroups = subGroups.concat(subGroup);
+      subGroups = subGroups.concat([group]);
+      if (group.expanded) {
+        let subGroup = this.getSublevel<T>(rowsInGroup, level + 1, group);
+        subGroups = subGroups.concat(subGroup);
+      } 
     });
     return subGroups;
   }
