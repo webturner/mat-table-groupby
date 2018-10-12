@@ -40,11 +40,15 @@ export class MatGroupBy implements DoCheck {
   }
 
   public groupData<T>(data: T[]): (T | Group)[] {
-    var rootGroup = new Group();
-    return this.getSublevel(data, 0, rootGroup);
+    var rootGroup = this.getRootGroup();
+    if (!rootGroup) {
+      rootGroup = new Group();
+      this.groupCache.push(rootGroup);
+    }
+    return this.getSublevel<T>(data, 0, rootGroup);
   }
 
-  private getSublevel(data: any[], level: number, parent: Group): any[] {
+  private getSublevel<T>(data: T[], level: number, parent: Group): (T | Group)[] {
     // Recursive function, stop when there are no more levels. 
     if (level >= this.grouping.groupedColumns.length)
       return data;
@@ -52,11 +56,15 @@ export class MatGroupBy implements DoCheck {
     var groups = this.uniqueBy(
       data.map(
         row => {
-          var result = new Group();
-          result.level = level + 1;
-          result.parent = parent;
-          for (var i = 0; i <= level; i++)
-            result[this.grouping.groupedColumns[i]] = row[this.grouping.groupedColumns[i]];
+          var result = this.getDataGroup(row, level + 1);
+          if (!result) {
+            result = new Group();
+            result.level = level + 1;
+            result.parent = parent;
+            for (var i = 0; i <= level; i++)
+              result[this.grouping.groupedColumns[i]] = row[this.grouping.groupedColumns[i]];
+            this.groupCache.push(result);
+          }
           return result;
         }
       ),
@@ -66,11 +74,11 @@ export class MatGroupBy implements DoCheck {
 
     var subGroups = [];
     groups.forEach(group => {
-      let rowsInGroup = data.filter(row => group[currentColumn] === row[currentColumn])
-      let subGroup = this.getSublevel(rowsInGroup, level + 1, group);
+      let rowsInGroup = data.filter(row => group[currentColumn] === row[currentColumn]);
+      let subGroup = this.getSublevel<T>(rowsInGroup, level + 1, group);
       subGroup.unshift(group);
       subGroups = subGroups.concat(subGroup);
-    })
+    });
     return subGroups;
   }
 
@@ -79,7 +87,37 @@ export class MatGroupBy implements DoCheck {
     return a.filter(function (item) {
       var k = key(item);
       return seen.hasOwnProperty(k) ? false : (seen[k] = true);
-    })
+    });
+  }
+
+  public toggleExpanded(row) {
+    row.expanded = !row.expanded;
+    this.groupingChange.next(this.grouping);
+  }
+
+  groupCache: Group[] = [];
+
+  getRootGroup(): (Group | null) {
+    const groups = this.groupCache.filter(group => group.level === 0);
+    if (groups.length > 1) throw "More than one root group found";
+    return groups.length === 1 ? groups[0] : null;
+  }
+
+  getDataGroup<T>(data: T, level?: number): (Group | null) {
+    if (!level) level = this.grouping.groupedColumns.length;
+    const groups = this.groupCache.filter(group => {
+      if (group.level !== level) return false;
+
+      let match = true;
+      for (var i = 0; i < level; i++) {
+        const column = this.grouping.groupedColumns[i];
+        if (!group[column] || !data[column] || group[column] !== data[column]) match = false;
+      }
+      return match;
+    });
+
+    if (groups.length > 1) throw "More than one group found";
+    return groups.length === 1 ? groups[0] : null;
   }
 }
 

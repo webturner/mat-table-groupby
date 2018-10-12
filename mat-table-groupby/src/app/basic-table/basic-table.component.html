@@ -43,6 +43,6 @@
     </td>
   </ng-container>
 
-  <tr mat-row *matRowDef="let row; columns: ['groupHeader']; when: matGroupBy.isGroup" (click)="grouping.groupHeaderClick(row)"> </tr>
+  <tr mat-row *matRowDef="let row; columns: ['groupHeader']; when: matGroupBy.isGroup" (click)="matGroupBy.toggleExpanded(row)"> </tr>
 
 </table>
