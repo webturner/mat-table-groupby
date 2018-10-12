@@ -13,14 +13,14 @@ import { Observable, BehaviorSubject } from 'rxjs';
 })
 export class MatGroupBy {
 
-  groupingChange: BehaviorSubject<Grouping>;
+  private groupingChange: BehaviorSubject<Grouping>;
 
   constructor() {
     this.groupingChange = new BehaviorSubject<Grouping>(this.grouping);
   }
 
-  get grouping(): Grouping { return this._grouping; }
-  set grouping(grouping: Grouping) {
+  public get grouping(): Grouping { return this._grouping; }
+  public set grouping(grouping: Grouping) {
     this._grouping = grouping;
     this.groupingChange.next(this.grouping);
   }
@@ -28,6 +28,11 @@ export class MatGroupBy {
 
   public isGroup(index, item): boolean {
     return item.level;
+  }
+
+  public toggleExpanded(row) {
+    row.expanded = !row.expanded;
+    this.groupingChange.next(this.grouping);
   }
 
   public groupData<T>(data: T[]): (T | Group)[] {
@@ -77,7 +82,7 @@ export class MatGroupBy {
     return subGroups;
   }
 
-  uniqueBy(a, key) {
+  private uniqueBy(a, key) {
     var seen = {};
     return a.filter(function (item) {
       var k = key(item);
@@ -85,20 +90,15 @@ export class MatGroupBy {
     });
   }
 
-  public toggleExpanded(row) {
-    row.expanded = !row.expanded;
-    this.groupingChange.next(this.grouping);
-  }
+  private groupCache: Group[] = [];
 
-  groupCache: Group[] = [];
-
-  getRootGroup(): (Group | null) {
+  private getRootGroup(): (Group | null) {
     const groups = this.groupCache.filter(group => group.level === 0);
     if (groups.length > 1) throw "More than one root group found";
     return groups.length === 1 ? groups[0] : null;
   }
 
-  getDataGroup<T>(data: T, level?: number): (Group | null) {
+  private getDataGroup<T>(data: T, level?: number): (Group | null) {
     if (!level) level = this.grouping.groupedColumns.length;
     const groups = this.groupCache.filter(group => {
       if (group.level !== level) return false;
