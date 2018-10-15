@@ -46,3 +46,5 @@
   <tr mat-row *matRowDef="let row; columns: ['groupHeader']; when: matGroupBy.isGroup" (click)="matGroupBy.toggleExpanded(row)"> </tr>
 
 </table>
+
+<mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>

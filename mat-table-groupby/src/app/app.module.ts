@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatTableModule, MatIconModule } from '@angular/material';
+import { MatTableModule, MatIconModule, MatPaginatorModule } from '@angular/material';
 
 import { AppComponent } from './app.component';
 import { BasicTableComponent } from './basic-table/basic-table.component';
@@ -16,10 +16,12 @@ import { BasicTableComponent } from './basic-table/basic-table.component';
     BrowserAnimationsModule,
     MatTableModule,
     MatIconModule,
+    MatPaginatorModule,
   ],
   exports: [
     MatTableModule,
     MatIconModule,
+    MatPaginatorModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

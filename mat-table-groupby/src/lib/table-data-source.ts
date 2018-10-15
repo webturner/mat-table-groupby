@@ -230,15 +230,15 @@ export class MatTableDataSource<T> extends DataSource<(T | Group)> {
     // Watch for filtered data or sort changes to provide an ordered set of data.
     const orderedData = combineLatest(filteredData, sortChange)
       .pipe(map(([data]) => this._orderData(data)));
-    // Watch for ordered data or page changes to provide a paged set of data.
-    const paginatedData = combineLatest(orderedData, pageChange)
-      .pipe(map(([data]) => this._pageData(data)));
-    // Watch for paged data or group changes to provide a grouped set of data.
-    const groupedData = combineLatest(paginatedData, groupChange)
+    // Watch for ordered data or group changes to provide a grouped set of data.
+    const groupedData = combineLatest(orderedData, groupChange)
       .pipe(map(([data]) => this._groupData(data)));
+    // Watch for ordered data or page changes to provide a paged set of data.
+    const paginatedData = combineLatest(groupedData, pageChange)
+      .pipe(map(([data]) => this._pageData(data)));
     // Watched for paged data changes and send the result to the table to render.
     this._renderChangesSubscription.unsubscribe();
-    this._renderChangesSubscription = groupedData.subscribe(data => this._renderData.next(data));
+    this._renderChangesSubscription = paginatedData.subscribe(data => this._renderData.next(data));
   }
 
   /**
@@ -274,7 +274,7 @@ export class MatTableDataSource<T> extends DataSource<(T | Group)> {
    * Returns a paged splice of the provided data array according to the provided MatPaginator's page
    * index and length. If there is no paginator provided, returns the data array as provided.
    */
-  _pageData(data: T[]): T[] {
+  _pageData(data: (T | Group)[]): (T | Group)[] {
     if (!this.paginator) { return data; }
 
     const startIndex = this.paginator.pageIndex * this.paginator.pageSize;
@@ -288,7 +288,9 @@ export class MatTableDataSource<T> extends DataSource<(T | Group)> {
   _groupData(data: T[]): (T | Group)[] {
     if (!this.groupBy) { return data; }
 
-    return this.groupBy.groupData(data.slice());
+    const groupedData = this.groupBy.groupData(data.slice());
+    if (this.paginator) { this._updatePaginator(groupedData.length); }
+    return groupedData;
   }
 
   /**
