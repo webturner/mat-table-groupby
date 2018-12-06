@@ -1,10 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator } from '@angular/material';
 
-import { MatTableDataSource } from "../../lib/table-data-source";
-import { MatGroupBy } from '../../lib/groupBy';
+import { MatTableDataSource } from '../../lib/table-data-source';
+import { MatGroupBy, Grouping } from '../../lib/groupBy';
 
-import { People, SampleDataService } from "../sample-data.service";
+import { People, SampleDataService } from '../sample-data.service';
 
 @Component({
   selector: 'app-basic-table',
@@ -24,8 +24,8 @@ export class BasicTableComponent implements OnInit {
 
   ngOnInit() {
     this.dataSource.paginator = this.paginator;
+    this.matGroupBy.grouping = new Grouping(['department', 'salary']);
     this.dataSource.groupBy = this.matGroupBy;
     this.dataSource.data = this.sampleDataService.people;
-    this.matGroupBy.grouping = { groupedColumns: ['department', 'salary'] };
   }
 }

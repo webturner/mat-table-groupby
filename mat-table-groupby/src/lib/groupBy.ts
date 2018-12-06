@@ -24,8 +24,8 @@ export class MatGroupBy {
     this._grouping = grouping;
     this.groupingChange.next(this.grouping);
   }
-  private _grouping: Grouping = { groupedColumns: [] };
-  private groupCache: Group[] = [];
+  private _grouping: Grouping;
+  private groupCache = new GroupCache<Group>();
 
   public isGroup(index, item): boolean {
     return item.level;
@@ -40,33 +40,37 @@ export class MatGroupBy {
     let rootGroup = this.getRootGroup();
     if (!rootGroup) {
       rootGroup = new Group();
-      this.groupCache.push(rootGroup);
+      this.groupCache.add({}, rootGroup);
     }
-    return this.getSublevel<T>(data, 0, rootGroup);
+    const sortedData = this.grouping.doSort<T>(data);
+    return this.getSublevel<T>(sortedData, 0, rootGroup);
   }
 
   private getSublevel<T>(data: T[], level: number, parent: Group): (T | Group)[] {
     // Recursive function, stop when there are no more levels.
-    if (level >= this.grouping.groupedColumns.length) {
+    if (level >= this.grouping.columns.length) {
       return data;
     }
 
-    const currentColumn = this.grouping.groupedColumns[level];
+    const currentColumn = this.grouping.columns[level];
 
     const groups = this.uniqueBy(
       data.map(
         row => {
-          let result = this.getDataGroup(row, level + 1);
+          const key = {};
+          for (let i = 0; i <= level; i++) {
+            key[this.grouping.columns[i]] = row[this.grouping.columns[i]];
+          }
+
+          let result = this.groupCache.retrieve(key);
           if (!result) {
             result = new Group();
             result.level = level + 1;
             result.parent = parent;
             result.name = currentColumn;
             result.value = row[currentColumn];
-            for (let i = 0; i <= level; i++) {
-              result[this.grouping.groupedColumns[i]] = row[this.grouping.groupedColumns[i]];
-            }
-            this.groupCache.push(result);
+            result.key = key;
+            this.groupCache.add(key, result);
           }
           return result;
         }
@@ -75,7 +79,7 @@ export class MatGroupBy {
 
     let subGroups = [];
     groups.forEach(group => {
-      const rowsInGroup = data.filter(row => group[currentColumn] === row[currentColumn]);
+      const rowsInGroup = data.filter(row => group.value === row[currentColumn]);
       subGroups = subGroups.concat([group]);
       if (group.expanded) {
         subGroups = subGroups.concat(
@@ -94,41 +98,53 @@ export class MatGroupBy {
     });
   }
 
-
   private getRootGroup(): (Group | null) {
-    const groups = this.groupCache.filter(group => group.level === 0);
-    if (groups.length > 1) {
-      throw new Error('More than one root group found');
+    return this.groupCache.retrieve({});
+  }
+}
+
+export class GroupCache<T> {
+
+  private cache = {};
+
+  add(key: any, item: T) {
+    const keyString = JSON.stringify(key);
+    this.cache[keyString] = item;
+  }
+
+  retrieve(key: any): T {
+    const keyString = JSON.stringify(key);
+    return <T>this.cache[keyString];
+  }
+}
+
+export class Grouping {
+  readonly columns: string[];
+
+  constructor(columns: string[]) {
+    this.columns = columns;
+  }
+
+  doSort<T>(data: T[]) {
+    return data.sort(this.compareGroupedColumns.bind(this));
+  }
+
+  compareGroupedColumns<T>(a: T, b: T): number {
+    for (let columnIndex = 0; columnIndex < this.columns.length; columnIndex++) {
+      // Don't use columns.foreach(column => {...});
+      // it prevents the return value being passed out of the function.
+      const column = this.columns[columnIndex];
+      if (a[column] > b[column]) { return +1; }
+      if (a[column] < b[column]) { return -1; }
     }
-    return groups.length === 1 ? groups[0] : null;
-  }
-
-  private getDataGroup<T>(data: T, level?: number): (Group | null) {
-    if (!level) { level = this.grouping.groupedColumns.length; }
-    const groups = this.groupCache.filter(group => {
-      if (group.level !== level) { return false; }
-
-      let match = true;
-      for (let i = 0; i < level; i++) {
-        const column = this.grouping.groupedColumns[i];
-        if (!group[column] || !data[column] || group[column] !== data[column]) { match = false; }
-      }
-      return match;
-    });
-
-    if (groups.length > 1) { throw new Error('More than one group found'); }
-    return groups.length === 1 ? groups[0] : null;
+    return 0;
   }
 }
-
-export interface Grouping {
-  readonly groupedColumns: string[];
-}
-
 export class Group {
   level = 0;
   name: string;
   value: any;
   parent: Group;
   expanded = true;
+  key: object;
 }
